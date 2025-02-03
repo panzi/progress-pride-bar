@@ -116,6 +116,7 @@ fn main() {
     } else {
         let width = args.width();
         let _ = print_progress_pride_bar(&mut out, width, args.value.unwrap_or(1.0), args.background);
+        let _ = write!(out, "\x1B[0m\n");
         let _ = out.flush();
     }
 }
