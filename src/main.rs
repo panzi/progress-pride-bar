@@ -384,8 +384,9 @@ fn main() {
             let _ = write!(out, "\x1B[0m");
             let _ = out.flush();
 
-            let sleep_duration = (animation_duration * (i + 1) / steps) - animation_start_ts.elapsed();
-            if sleep_duration > std::time::Duration::ZERO && !interruptable_sleep(sleep_duration) {
+            let sleep_duration = animation_duration * (i + 1) / steps;
+            let elapsed = animation_start_ts.elapsed();
+            if sleep_duration > elapsed && !interruptable_sleep(sleep_duration - elapsed) {
                 break;
             }
         }
@@ -399,6 +400,4 @@ fn main() {
         let _ = print_flag(&mut out, width, args.value.unwrap_or(1.0), args.background);
         let _ = out.flush();
     }
-
-
 }
