@@ -1,0 +1,8 @@
+[package]
+name = "progress-pride-bar"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.27", features = ["derive"] }
+term_size = "0.3.2"
