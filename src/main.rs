@@ -348,9 +348,8 @@ fn main() {
 
     let mut out = std::io::stdout().lock();
 
-    if let Some(Duration (animate)) = args.animate {
+    if let Some(Duration (animation_duration)) = args.animate {
         let steps = args.steps;
-        let frame_duration = animate / steps;
 
         // CSI ?  7 l     No Auto-Wrap Mode (DECAWM), VT100.
         // CSI ? 25 l     Hide cursor (DECTCEM), VT220
@@ -368,9 +367,8 @@ fn main() {
             });
         }
 
+        let animation_start_ts = Instant::now();
         for i in istart..=steps {
-            let frame_start_ts = Instant::now();
-
             if !running.load(Ordering::Relaxed) {
                 break;
             }
@@ -386,8 +384,8 @@ fn main() {
             let _ = write!(out, "\x1B[0m");
             let _ = out.flush();
 
-            let elapsed = frame_start_ts.elapsed();
-            if frame_duration > elapsed && !interruptable_sleep(frame_duration - elapsed) {
+            let sleep_duration = (animation_duration * (i + 1) / steps) - animation_start_ts.elapsed();
+            if sleep_duration > std::time::Duration::ZERO && !interruptable_sleep(sleep_duration) {
                 break;
             }
         }
