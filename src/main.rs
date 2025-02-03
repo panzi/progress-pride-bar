@@ -1,5 +1,5 @@
 use clap::Parser;
-use std::{fmt::Debug, io::Write, sync::{atomic::{AtomicBool, Ordering}, Arc}};
+use std::{fmt::Debug, io::Write, sync::{atomic::{AtomicBool, Ordering}, Arc}, time::Instant};
 
 pub mod color;
 pub mod duration;
@@ -328,22 +328,29 @@ pub struct Args {
     steps: u32,
 }
 
+impl Args {
+    #[inline]
+    pub fn width(&self) -> usize {
+        let Some(width) = self.width else {
+            let (term_width, _term_heigth) = term_size::dimensions().unwrap_or((0, 0));
+            if term_width == 0 {
+                return 80;
+            }
+            return term_width;
+        };
+
+        width
+    }
+}
+
 fn main() {
     let args = Args::parse();
-
-    let width = args.width.unwrap_or_else(|| {
-        let (term_width, _term_heigth) = term_size::dimensions().unwrap_or((0, 0));
-        if term_width == 0 {
-            return 80;
-        }
-        term_width
-    });
 
     let mut out = std::io::stdout().lock();
 
     if let Some(Duration (animate)) = args.animate {
         let steps = args.steps;
-        let sleep_duration = animate / steps;
+        let frame_duration = animate / steps;
 
         // CSI ?  7 l     No Auto-Wrap Mode (DECAWM), VT100.
         // CSI ? 25 l     Hide cursor (DECTCEM), VT220
@@ -362,6 +369,8 @@ fn main() {
         }
 
         for i in istart..=steps {
+            let frame_start_ts = Instant::now();
+
             if !running.load(Ordering::Relaxed) {
                 break;
             }
@@ -372,12 +381,13 @@ fn main() {
                 let _ = write!(out, "\r");
             }
 
+            let width = args.width();
             let _ = print_flag(&mut out, width, i as f64 / steps as f64, args.background);
             let _ = write!(out, "\x1B[0m");
             let _ = out.flush();
 
-            if !interruptable_sleep(sleep_duration) {
-                println!();
+            let elapsed = frame_start_ts.elapsed();
+            if frame_duration > elapsed && !interruptable_sleep(frame_duration - elapsed) {
                 break;
             }
         }
@@ -385,11 +395,11 @@ fn main() {
         // CSI 0 m        Reset or normal, all attributes become turned off
         // CSI ?  7 h     Auto-Wrap Mode (DECAWM), VT100
         // CSI ? 25 h     Show cursor (DECTCEM), VT220
-        print!("\x1B[0m\x1B[?25h\x1B[?7h");
+        println!("\x1B[0m\x1B[?25h\x1B[?7h");
     } else {
+        let width = args.width();
         let _ = print_flag(&mut out, width, args.value.unwrap_or(1.0), args.background);
         let _ = out.flush();
-
     }
 
 
