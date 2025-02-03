@@ -1,9 +1,31 @@
 use clap::Parser;
-use std::{io::Write, thread::sleep, time::Duration};
+use std::{fmt::Debug, io::Write, sync::{atomic::{AtomicBool, Ordering}, Arc}};
 
 pub mod color;
+pub mod duration;
 
 use color::{Rgb, blend, BLACK, WHITE, TRANS_PINK, TRANS_BLUE, BROWN, RED, ORANGE, BLUE, PURPLE};
+use duration::Duration;
+
+fn interruptable_sleep(duration: std::time::Duration) -> bool {
+    #[cfg(target_family = "unix")]
+    {
+        let nanos = duration.as_nanos();
+        let sec = nanos / 1_000_000_000u128;
+        let req = libc::timespec {
+            tv_sec:  sec as i64,
+            tv_nsec: (nanos - (sec * 1_000_000_000u128)) as i64,
+        };
+        let ret = unsafe { libc::nanosleep(&req, std::ptr::null_mut()) };
+        return ret == 0;
+    }
+
+    #[cfg(not(target_family = "unix"))]
+    {
+        std::thread::sleep(duration);
+        return true;
+    }
+}
 
 // 🭏🬼🭏🬼🭏🬼🭏🬼██████████
 // 🭕🭢🭕🭢🭕🭢🭕🭢🭕█████████
@@ -143,26 +165,27 @@ pub fn print_flag(mut out: impl Write, width: usize, value: f64, background_colo
     Ok(())
 }
 
-
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    #[arg(short, long, default_value_t = 1.0)]
-    value: f64,
+    #[arg(short, long)]
+    value: Option<f64>,
 
     #[arg(short, long, default_value_t = BLACK)]
     background: Rgb,
 
     #[arg(short, long)]
     width: Option<usize>,
+
+    #[arg(short, long, value_name = "DURATION")]
+    animate: Option<Duration>,
+
+    #[arg(short, long, default_value_t = 1000)]
+    steps: u32,
 }
 
 fn main() {
     let args = Args::parse();
-
-    // CSI ?  7 l     No Auto-Wrap Mode (DECAWM), VT100.
-    // CSI ? 25 l     Hide cursor (DECTCEM), VT220
-    print!("\x1B[?25l\x1B[?7l");
 
     let width = args.width.unwrap_or_else(|| {
         let (term_width, _term_heigth) = term_size::dimensions().unwrap_or((0, 0));
@@ -173,18 +196,53 @@ fn main() {
     });
 
     let mut out = std::io::stdout().lock();
-    let steps = 1000;
-    for i in 0..=steps {
-        if i != 0 {
-            let _ = write!(out, "\x1B[4A");
+
+    if let Some(Duration (animate)) = args.animate {
+        let steps = args.steps;
+        let sleep_duration = animate / steps;
+
+        // CSI ?  7 l     No Auto-Wrap Mode (DECAWM), VT100.
+        // CSI ? 25 l     Hide cursor (DECTCEM), VT220
+        print!("\x1B[?25l\x1B[?7l");
+
+        let fstart = args.value.unwrap_or(0.0);
+        let istart = (fstart * steps as f64) as u32;
+
+        let running = Arc::new(AtomicBool::new(true));
+
+        {
+            let running = running.clone();
+            let _ = ctrlc::set_handler(move || {
+                running.store(false, Ordering::Relaxed);
+            });
         }
-        let _ = print_flag(&mut out, width, i as f64 / steps as f64, args.background);
+
+        for i in istart..=steps {
+            if !running.load(Ordering::Relaxed) {
+                break;
+            }
+
+            if i != 0 {
+                let _ = write!(out, "\x1B[4A");
+            }
+
+            let _ = print_flag(&mut out, width, i as f64 / steps as f64, args.background);
+            let _ = out.flush();
+
+            if !interruptable_sleep(sleep_duration) {
+                break;
+            }
+        }
+
+        // CSI 0 m        Reset or normal, all attributes become turned off
+        // CSI ?  7 h     Auto-Wrap Mode (DECAWM), VT100
+        // CSI ? 25 h     Show cursor (DECTCEM), VT220
+        print!("\x1B[0m\x1B[?25h\x1B[?7h");
+    } else {
+        let _ = print_flag(&mut out, width, args.value.unwrap_or(1.0), args.background);
         let _ = out.flush();
-        sleep(Duration::from_secs_f64(30.0 / steps as f64));
+
     }
 
-    // CSI 0 m        Reset or normal, all attributes become turned off
-    // CSI ?  7 h     Auto-Wrap Mode (DECAWM), VT100
-    // CSI ? 25 h     Show cursor (DECTCEM), VT220
-    print!("\x1B[0m\x1B[?25h\x1B[?7h");
+
 }

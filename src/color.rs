@@ -61,9 +61,9 @@ impl std::fmt::Display for ParseRgbError {
     #[inline]
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(cause) = &self.cause {
-            write!(f, "Invalid Rgb color syntax: {}", cause)
+            write!(f, "Invalid RGB color syntax: {}", cause)
         } else {
-            "Invalid Rgb color syntax".fmt(f)
+            "Invalid RGB color syntax".fmt(f)
         }
     }
 }
