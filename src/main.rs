@@ -39,11 +39,14 @@ pub struct Args {
     #[arg(short, long)]
     width: Option<usize>,
 
-    #[arg(short, long, value_name = "DURATION")]
+    #[arg(short, long, value_name = "DURATION", num_args = 0..=1, require_equals = true, default_missing_value = "5s")]
     animate: Option<Duration>,
 
-    #[arg(short, long, default_value_t = 1000)]
-    steps: u32,
+    #[arg(short, long)]
+    steps: Option<u32>,
+
+    #[arg(short, long, conflicts_with = "steps")]
+    fps: Option<u32>,
 }
 
 impl Args {
@@ -67,7 +70,13 @@ fn main() {
     let mut out = std::io::stdout().lock();
 
     if let Some(Duration (animation_duration)) = args.animate {
-        let steps = args.steps;
+        let steps = if let Some(steps) = args.steps {
+            steps
+        } else if let Some(fps) = args.fps {
+            (animation_duration.as_secs_f64() * fps as f64) as u32
+        } else {
+            (animation_duration.as_secs_f64() * 60.0) as u32
+        };
 
         // CSI ?  7 l     No Auto-Wrap Mode (DECAWM), VT100.
         // CSI ? 25 l     Hide cursor (DECTCEM), VT220
