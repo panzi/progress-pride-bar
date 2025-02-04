@@ -16,7 +16,7 @@ supports Unicode [Symbols for Legacy Computing](https://en.wikipedia.org/wiki/Sy
 
 Demo video:
 
-[![Demo video](https://i3.ytimg.com/vi/kK4r7wW1X4c/maxresdefault.jpg)](https://www.youtube.com/watch?v=kK4r7wW1X4c)
+[![Demo video](https://i3.ytimg.com/vi/kK4r7wW1X4c/hqdefault.jpg)](https://www.youtube.com/watch?v=kK4r7wW1X4c)
 
 Usage
 -----
