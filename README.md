@@ -9,6 +9,14 @@ It's not the intersex-inclusive version because I don't know of a way to render
 the circle like that across two characters in the terminal. There seems to be no
 fitting pair of Unicode symbols.
 
+**Note:** For this to render right you need to use a font in your terminal that
+supports Unicode [Symbols for Legacy Computing](https://en.wikipedia.org/wiki/Symbols_for_Legacy_Computing).
+[Konsole](https://konsole.kde.org/)'s default font
+[Hack](https://github.com/source-foundry/Hack) is an example of such a font.
+
+Demo video:
+
+[![Demo video](https://i3.ytimg.com/vi/kK4r7wW1X4c/maxresdefault.jpg)](https://www.youtube.com/watch?v=kK4r7wW1X4c)
 
 Usage
 -----
@@ -38,3 +46,26 @@ Options:
   -V, --version
           Print version
 ```
+
+Related Projects
+----------------
+
+Other things I made that render Uinocde characters to the terminal:
+
+- [Color Cycling](https://github.com/panzi/rust-color-cycle) (Rust): This is a
+  method to give otherwise static pixel art images some kind of animation using
+  its color palette.
+- [Term Flags](https://github.com/panzi/python-term-flags) (Python): A primitive
+  sytem to render simple scalable flags on the terminal using Unicode.
+- [Bad Apple!! but its the Unix Terminal](https://github.com/panzi/rust-color-cycle)
+  (C): A program that displays the Bad Apple!! animation on the terminal.
+- [ANSI IMG](https://github.com/panzi/ansi-img) (Rust): Display images (including
+  animated GIFs) on the terminal.
+- [Unicode Bar Charts](https://github.com/panzi/js-unicode-bar-chart)
+  (JavaScript): Draw bar charts on the terminal. With 8 steps per character and
+  with colors.
+- [Unicode Progress Bars](https://github.com/panzi/js-unicode-progress-bar)
+  (JavaScript): Draw bar charts on the terminal. With 8 steps per character,
+  border styles, and colors.
+- [Unicode Unicode Plots](https://github.com/panzi/js-unicode-plot) (JavaScript):
+  Very simple plotting on the terminal. No colors.

@@ -2,6 +2,9 @@
 name = "progress-pride-bar"
 version = "0.1.0"
 edition = "2021"
+authors = ["Mathias Panzenböck"]
+description = "A progress bar for the terminal that looks like the progress pride flag."
+license = "MIT"
 
 [dependencies]
 clap = { version = "4.5.27", features = ["derive", "wrap_help"] }
