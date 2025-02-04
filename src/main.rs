@@ -30,22 +30,61 @@ fn interruptable_sleep(duration: std::time::Duration) -> bool {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Args {
-    #[arg(short, long)]
+    #[arg(short, long,
+        value_parser = |s: &str| {
+            let Ok(v) = s.parse::<f64>() else {
+                return Err(format!("not a number"));
+            };
+
+            if v.is_nan() {
+                return Err(format!("not a number"));
+            }
+
+            if v < 0.0 {
+                return Err(format!("less than minimum of 0.0"));
+            }
+
+            if v > 1.0 {
+                return Err(format!("greater than maximum of 1.0"));
+            }
+
+            Ok(v)
+        },
+        help = "\
+            Display the porgress pride bar at this value or start animation at \
+            this value. Value must be in the range of 0.0 to 1.0. [default: 1.0]"
+    )]
     value: Option<f64>,
 
-    #[arg(short, long, default_value_t = BLACK)]
+    #[arg(short, long, default_value_t = BLACK,
+        help = "\
+            The background color needs to be known because some of the shapes \
+            are only available inverted, where what is supposed to be the \
+            background is rendered with a character and the background is \
+            colored-in."
+    )]
     background: Rgb,
 
-    #[arg(short, long)]
+    #[arg(short, long,
+        help = "Width of the full bar. [default: <the terminal's width>]"
+    )]
     width: Option<usize>,
 
-    #[arg(short, long, value_name = "DURATION", num_args = 0..=1, require_equals = true, default_missing_value = "5s")]
+    #[arg(short, long, value_name = "DURATION",
+        num_args = 0..=1, require_equals = true, default_missing_value = "5s",
+        help = "Play an animation. Unit suffixes: d, h, m, s, ms, ns [default: 5s]"
+    )]
     animate: Option<Duration>,
 
-    #[arg(short, long)]
+    #[arg(short, long, requires = "animate",
+        help = "Number of steps in the animation."
+    )]
     steps: Option<u32>,
 
-    #[arg(short, long, conflicts_with = "steps")]
+    #[arg(short, long, conflicts_with = "steps", requires = "animate",
+        help = "\
+            Frame rate of the animation. Conflicts with --steps. [default: 60]"
+    )]
     fps: Option<u32>,
 }
 
@@ -53,11 +92,13 @@ impl Args {
     #[inline]
     pub fn width(&self) -> usize {
         let Some(width) = self.width else {
-            let (term_width, _term_heigth) = term_size::dimensions().unwrap_or((0, 0));
-            if term_width == 0 {
-                return 80;
+            if let Some((terminal_size::Width(term_width), _)) = terminal_size::terminal_size() {
+                if term_width > 0 {
+                    return term_width as usize;
+                }
             }
-            return term_width;
+
+            return 80;
         };
 
         width
