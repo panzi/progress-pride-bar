@@ -37,6 +37,8 @@ Options:
           Width of the full bar. [default: <the terminal's width>]
   -a, --animate[=<DURATION>]
           Play an animation. Unit suffixes: d, h, m, s, ms, ns [default: 5s]
+  -r, --reverse
+          Reverse animation.
   -s, --steps <STEPS>
           Number of steps in the animation.
   -f, --fps <FPS>
